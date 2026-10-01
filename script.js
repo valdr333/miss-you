@@ -71,7 +71,7 @@ async function sendPing(kind) {
             title: m.title.replace('{me}', settings.me),
             message: m.body,
             priority: m.priority,
-            click: location.href,
+            // click: location.href,
         }),
     });
     if (!res.ok) {
