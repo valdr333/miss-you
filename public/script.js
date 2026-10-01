@@ -16,14 +16,6 @@ function saveSettings(s) {
     localStorage.setItem(KEY, JSON.stringify(s));
 }
 
-function topicsFor(s) {
-    const base = slug(s.base);
-    return {
-        mine: `${base}-${slug(s.me)}`,
-        theirs: `${base}-${slug(s.partner)}`,
-    };
-}
-
 const setupEl = document.getElementById('setup');
 const homeEl = document.getElementById('home');
 const formEl = document.getElementById('setup-form');
@@ -41,7 +33,7 @@ formEl.addEventListener('submit', (e) => {
     settings = { me: data.me.trim(), partner: data.partner.trim(), base: data.base.trim() };
     saveSettings(settings);
     showScreen();
-    // startListening(); // add back once you build step 6 (in-page banner)
+    setupPush();
 });
 
 document.getElementById('edit').addEventListener('click', () => {
@@ -57,26 +49,23 @@ document.getElementById('edit').addEventListener('click', () => {
 
 showScreen();
 
-const MESSAGES = {
-    miss: { title: '💌 {me} misses you', body: 'Just a little nudge', priority: 3 },
-    checkin: { title: '🫂 {me} wants you to check in', body: 'Send a hello when you can', priority: 4 },
-};
-
 async function sendPing(kind) {
-    const m = MESSAGES[kind];
-    const res = await fetch('https://ntfy.sh/', {
+    const res = await fetch('/api/ping', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            topic: topicsFor(settings).theirs,
-            title: m.title.replace('{me}', settings.me),
-            message: m.body,
-            priority: m.priority,
-            // click: location.href,
+            pair: slug(settings.base),
+            fromName: settings.me,
+            to: slug(settings.partner),
+            kind,
         }),
     });
-    if (!res.ok) {
-        throw new Error(`ntfy returned ${res.status}`);
+    if (res.status === 404 || res.status === 410) {
+        const err = new Error('partner not subscribed');
+        err.userMessage = `${settings.partner} hasn't turned on notifications yet`;
+        throw err;
     }
+    if (!res.ok) throw new Error(`Server returned ${res.status}`);
 }
 
 const COOLDOWN_MS = 500;
@@ -93,7 +82,7 @@ buttons.forEach((btn) => {
             navigator.vibrate?.(50);
         } catch (err) {
             console.error(err);
-            statusEl.textContent = 'Could not send. Check your connection and try again.';
+            statusEl.textContent = err.userMessage || 'Could not send. Check your connection and try again.';
         } finally {
             setTimeout(() => {
                 buttons.forEach((b) => (b.disabled = false));
@@ -101,3 +90,78 @@ buttons.forEach((btn) => {
         }
     });
 });
+
+const VAPID_PUBLIC_KEY = 'BCXPuFfiBvVPP-ZE0XEIU1akysTFHShYp8KnlfBfhYz7G51gKrfKrvX8r-OKOG3pmJnHikX9toUJdNR5VlZ6Zwc';
+const enableBtn = document.getElementById('enable-push');
+
+function urlBase64ToUint8Array(base64) {
+    const padding = '='.repeat((4 - (base64.length % 4)) % 4);
+    const raw = atob((base64 + padding).replace(/-/g, '+').replace(/_/g, '/'));
+    return Uint8Array.from(raw, (c) => c.charCodeAt(0));
+}
+
+async function saveSubscription(subscription) {
+    await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pair: slug(settings.base), name: slug(settings.me), subscription }),
+    });
+}
+
+// Until notifications are on, hide the ping buttons and show only the enable button
+function setPushReady(ready) {
+    homeEl.classList.toggle('needs-push', !ready);
+    enableBtn.hidden = ready;
+    if (!ready) {
+        statusEl.textContent = Notification.permission === 'denied'
+            ? 'Notifications are off. Turn them on in your phone settings to use the app.'
+            : 'Turn on notifications so you never miss a ping 💜';
+    }
+}
+
+async function setupPush() {
+    if (!settings) return;
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        homeEl.classList.add('needs-push');
+        enableBtn.hidden = true;
+        statusEl.textContent = 'On iPhone, open this app from your Home Screen to get notifications.';
+        return;
+    }
+    try {
+        const reg = await navigator.serviceWorker.register('/sw.js');
+        const existing = await reg.pushManager.getSubscription();
+        if (existing && Notification.permission === 'granted') {
+            await saveSubscription(existing);   // refresh it every time the app opens
+            setPushReady(true);
+        } else {
+            setPushReady(false);
+        }
+    } catch (err) {
+        console.error(err);
+        setPushReady(false);
+    }
+}
+
+enableBtn.addEventListener('click', async () => {
+    // must run directly from a tap, or iPhone refuses to ask
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+        setPushReady(false);
+        return;
+    }
+    try {
+        const reg = await navigator.serviceWorker.ready;
+        const subscription = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+        });
+        await saveSubscription(subscription);
+        setPushReady(true);
+        statusEl.textContent = 'Notifications are on 🔔';
+    } catch (err) {
+        console.error(err);
+        statusEl.textContent = 'Could not turn on notifications. Try again.';
+    }
+});
+
+setupPush();
