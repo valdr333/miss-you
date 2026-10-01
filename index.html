@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#9b5de5">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="icon" href="./icon-192.png">
+    <link rel="apple-touch-icon" href="./icon-180.png">
+    <meta name="apple-mobile-web-app-title" content="Miss You">
+    <title>Miss You</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <main id="setup" hidden>
+        <h1>Setup</h1>
+        <form id="setup-form">
+            <label>Your name <input name="me" required maxlength="20"></label>
+            <label>Partner's name <input name="partner" required maxlength="20"></label>
+            <label>Secret code <input name="base" required minlength="8" maxlength="40"></label>
+            <button type="submit">Save</button>
+        </form>
+    </main>
+
+    <main id="home" hidden>
+        <div class="hero">
+            <button class="ping miss orbit" data-kind="miss">
+                <span class="ring ring-1" aria-hidden="true"><span class="moon"></span></span>
+                <span class="ring ring-2" aria-hidden="true"><span class="moon small"></span></span>
+                <span class="label">I miss you</span>
+            </button>
+        </div>
+
+        <button class="ping checkin" data-kind="checkin">
+            <span aria-hidden="true">🫂</span> Check in please
+        </button>
+        <p id="status" role="status"></p>
+        <button id="edit" class="link">Settings</button>
+    </main>
+
+    <div id="banner" role="alert"></div>
+    <script src="./script.js" type="module"></script>
+</body>
+</html>
