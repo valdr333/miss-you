@@ -10,6 +10,8 @@ webpush.setVapidDetails(
 const MESSAGES = {
     miss:    { title: '💌 {me} misses you', body: 'Just a little nudge' },
     checkin: { title: '🫂 {me} wants you to check in', body: 'Send a hello when you can' },
+    hug:     { title: '🤗 {me} sent you a hug', body: 'A little love for you' },
+    sos:     { title: '🚨 {me} needs you', body: 'Please check in NOW' },
 };
 
 export default async (req) => {
@@ -27,6 +29,7 @@ export default async (req) => {
     const payload = JSON.stringify({
         title: m.title.replace('{me}', fromName.slice(0, 20)),
         body: m.body,
+        kind,
     });
 
     try {

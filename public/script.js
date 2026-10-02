@@ -165,3 +165,67 @@ enableBtn.addEventListener('click', async () => {
 });
 
 setupPush();
+
+const sosEl = document.getElementById('sos');
+const thumb = sosEl.querySelector('.sos-thumb');
+let startX = null;
+let max = 0;
+let progress = 0;
+let sending = false;
+
+function setPosition(dx) {
+    progress = max > 0 ? dx / max : 0;
+    thumb.style.transform = `translateX(${dx}px)`
+    sosEl.style.setProperty('--p', progress);
+}
+
+function resetSlider() {
+    sosEl.classList.remove('dragging');
+    setPosition(0);
+}
+
+thumb.addEventListener('pointerdown', (e) => {
+    if (sending) return;
+    startX = e.clientX;
+    max = sosEl.clientWidth - thumb.offsetWidth;
+    thumb.setPointerCapture(e.pointerId);
+    sosEl.classList.add('dragging');
+});
+
+thumb.addEventListener('pointermove', (e) => {
+    if (startX === null) return;
+    let dx = e.clientX - startX;
+    dx = Math.max(0, Math.min(dx, max));
+    setPosition(dx);
+});
+
+function endDrag(e) {
+    if (startX === null) return;
+    startX = null;
+    if (e.type === 'pointerup' && progress > 0.95) {
+        sendSOS();
+    } else {
+        resetSlider();
+    }
+}
+
+thumb.addEventListener('pointerup', endDrag);
+thumb.addEventListener('pointercancel', endDrag);
+
+async function sendSOS() {
+    sending = true;
+    statusEl.textContent = 'Sending SOS...';
+    try {
+        await sendPing('sos');
+        statusEl.textContent = `🚨 SOS sent to ${settings.partner}`;
+        navigator.vibrate?.([100, 50, 100]);
+    } catch (err) {
+        console.error(err);
+        statusEl.textContent = `SOS didn't send. Call ${settings.partner} directly.`;
+    } finally {
+        setTimeout(() => {
+            sending = false;
+            resetSlider();
+        }, 1000);
+    }
+}

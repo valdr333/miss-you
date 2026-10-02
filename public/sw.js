@@ -3,13 +3,18 @@ self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim(
 
 self.addEventListener('push', (event) => {
     const data = event.data ? event.data.json() : {};
-    event.waitUntil(
-        self.registration.showNotification(data.title || 'Miss You', {
-            body: data.body || '',
-            icon: '/icon-192.png',
-            data: { url: '/' },
-        })
-    );
+    const options = {
+        body: data.body || '',
+        icon: '/icon-192.png',
+        data: { url: '/' },
+    };
+    if (data.kind === 'sos') {
+        options.requireInteraction = true;          // stays until dismissed
+        options.vibrate = [300, 100, 300, 100, 600];
+        options.tag = 'sos';                        // a new SOS replaces the old one...
+        options.renotify = true;                    // ...but still buzzes again
+    }
+    event.waitUntil(self.registration.showNotification(data.title || 'Miss You', options));
 });
 
 self.addEventListener('notificationclick', (event) => {

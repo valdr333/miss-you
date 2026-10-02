@@ -38,13 +38,23 @@
             </button>
         </div>
 
-        <button class="ping checkin" data-kind="checkin">
-            <span aria-hidden="true">🫂</span> Check in please
-        </button>
+        <div class="buttons-row">
+            <button class="ping checkin" data-kind="checkin">
+                <span aria-hidden="true">🫂</span> Check in please
+            </button>
+            <button class="ping hug" data-kind="hug">
+                <span aria-hidden="true">🤗</span> Send a hug
+            </button>
+        </div>
         <p id="status" role="status"></p>
         <button id="enable-push" hidden>🔔 Turn on notifications</button>
         <button id="edit" class="link">Settings</button>
     </main>
+
+    <div id="sos" class="sos">
+        <div class="sos-thumb"></div>
+        <span class="sos-label">slide for SOS ›</span>
+    </div>
 
     <div id="banner" role="alert"></div>
     <script src="./script.js" type="module"></script>
