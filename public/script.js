@@ -234,7 +234,7 @@ async function sendSOS() {
         setTimeout(() => {
             sending = false;
             resetSlider();
-        }, 1000);
+        }, 300);
     }
 }
 
@@ -263,7 +263,10 @@ function showSosDialog(point) {
         ? `intent://www.google.com/maps/search/?api=1&query=${query}#Intent;scheme=https;package=com.google.android.apps.maps;end`
         : `https://www.google.com/maps/search/?api=1&query=${query}`;
     document.getElementById('sos-name').textContent = settings?.partner || 'Your partner';
-    if (!sosDialog.open) sosDialog.showModal();
+    if (!sosDialog.open) {
+        sosDialog.showModal();
+        document.activeElement?.blur();   // showModal focuses Cancel, which draws a focus ring
+    }
 }
 
 sosOpen.addEventListener('click', () => sosDialog.close());

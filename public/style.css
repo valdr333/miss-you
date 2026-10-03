@@ -377,6 +377,12 @@ button[type="submit"] {
     border-radius: 999px;
     font-weight: 700;
     text-decoration: none;
+    touch-action: manipulation; /* no double-tap zoom delay */
+    transition: transform 0.1s;
+}
+.sos-dialog-actions button:active,
+#sos-open:active {
+    transform: scale(0.96);
 }
 .sos-dialog-actions button {
     background: var(--accent-soft);
