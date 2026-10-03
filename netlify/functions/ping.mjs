@@ -17,7 +17,13 @@ const MESSAGES = {
 export default async (req) => {
     if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 });
 
-    const { pair, fromName, to, kind } = await req.json();
+    const { pair, fromName, to, kind, lat, lng } = await req.json();
+    let url = '/';
+    if (kind === 'sos') {
+        if (typeof lat === 'number' && typeof lng === 'number' && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+            url = `https://www.google.com/maps/search/?api=1&query=${lat.toFixed(5)},${lng.toFixed(5)}`;
+        }
+    }
     const m = MESSAGES[kind];
     if (!pair || !fromName || !to || !m) return new Response('Missing data', { status: 400 });
 
@@ -30,6 +36,7 @@ export default async (req) => {
         title: m.title.replace('{me}', fromName.slice(0, 20)),
         body: m.body,
         kind,
+        url,
     });
 
     try {

@@ -6,7 +6,7 @@ self.addEventListener('push', (event) => {
     const options = {
         body: data.body || '',
         icon: '/icon-192.png',
-        data: { url: '/' },
+        data: { url: data.url || '/' },
     };
     if (data.kind === 'sos') {
         options.requireInteraction = true;          // stays until dismissed
@@ -19,9 +19,14 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
+    const url = event.notification.data.url;
+    if (url !== '/') {
+        event.waitUntil(self.clients.openWindow(url));
+        return;
+    }
     event.waitUntil((async () => {
         const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
         if (windows.length > 0) return windows[0].focus();
-        return self.clients.openWindow(event.notification.data.url);
+        return self.clients.openWindow(url);
     })());
 });

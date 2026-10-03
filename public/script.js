@@ -32,6 +32,7 @@ formEl.addEventListener('submit', (e) => {
     const data = Object.fromEntries(new FormData(formEl));
     settings = { me: data.me.trim(), partner: data.partner.trim(), base: data.base.trim() };
     saveSettings(settings);
+    getLocation();
     showScreen();
     setupPush();
 });
@@ -49,7 +50,7 @@ document.getElementById('edit').addEventListener('click', () => {
 
 showScreen();
 
-async function sendPing(kind) {
+async function sendPing(kind, extra = {}) {
     const res = await fetch('/api/ping', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -58,6 +59,7 @@ async function sendPing(kind) {
             fromName: settings.me,
             to: slug(settings.partner),
             kind,
+            ...extra,
         }),
     });
     if (res.status === 404 || res.status === 410) {
@@ -214,10 +216,16 @@ thumb.addEventListener('pointercancel', endDrag);
 
 async function sendSOS() {
     sending = true;
+    statusEl.textContent = 'Getting location...';
+    const coords = await getLocation();
     statusEl.textContent = 'Sending SOS...';
     try {
-        await sendPing('sos');
-        statusEl.textContent = `🚨 SOS sent to ${settings.partner}`;
+        await sendPing('sos', coords ? coords : {});
+        if (coords === null) {
+            statusEl.textContent = `🚨 SOS sent (no location)`;
+        } else {
+            statusEl.textContent = `🚨 SOS sent with your location`;
+        }
         navigator.vibrate?.([100, 50, 100]);
     } catch (err) {
         console.error(err);
@@ -228,4 +236,15 @@ async function sendSOS() {
             resetSlider();
         }, 1000);
     }
+}
+
+function getLocation() {
+    return new Promise((resolve) => {
+        if (!navigator.geolocation) return resolve(null);
+        navigator.geolocation.getCurrentPosition(
+            (pos) => resolve({lat: pos.coords.latitude, lng: pos.coords.longitude}),
+            () => resolve(null),
+            {enableHighAccuracy: true, timeout: 5000, maximumAge: 60000},
+        );
+    });
 }
