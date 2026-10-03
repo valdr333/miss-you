@@ -248,3 +248,34 @@ function getLocation() {
         );
     });
 }
+
+// SOS popup: shown after tapping an SOS notification that has a location
+const sosDialog = document.getElementById('sos-dialog');
+const sosOpen = document.getElementById('sos-open');
+
+function showSosDialog(point) {
+    const [lat, lng] = String(point).split(',').map(Number);
+    // the point comes from a URL, so check it (NaN fails these checks too)
+    if (!(lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180)) return;
+
+    const query = `${lat},${lng}`;
+    sosOpen.href = /android/i.test(navigator.userAgent)
+        ? `intent://www.google.com/maps/search/?api=1&query=${query}#Intent;scheme=https;package=com.google.android.apps.maps;end`
+        : `https://www.google.com/maps/search/?api=1&query=${query}`;
+    document.getElementById('sos-name').textContent = settings?.partner || 'Your partner';
+    if (!sosDialog.open) sosDialog.showModal();
+}
+
+sosOpen.addEventListener('click', () => sosDialog.close());
+
+// App was closed: sw.js opened it with ?sos=lat,lng
+const sosParam = new URLSearchParams(location.search).get('sos');
+if (sosParam) {
+    history.replaceState(null, '', location.pathname);   // so a reload doesn't show it again
+    showSosDialog(sosParam);
+}
+
+// App was already open: sw.js sends a message instead
+navigator.serviceWorker?.addEventListener('message', (e) => {
+    if (e.data?.type === 'sos') showSosDialog(e.data.point);
+});

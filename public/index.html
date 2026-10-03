@@ -56,6 +56,15 @@
         <span class="sos-label">slide for SOS ›</span>
     </div>
 
+    <dialog id="sos-dialog">
+        <p class="sos-dialog-title">🚨 <span id="sos-name"></span> needs you</p>
+        <p>Open their location in Google Maps?</p>
+        <div class="sos-dialog-actions">
+            <form method="dialog"><button>Cancel</button></form>
+            <a id="sos-open">Open</a>
+        </div>
+    </dialog>
+
     <div id="banner" role="alert"></div>
     <script src="./script.js" type="module"></script>
 </body>

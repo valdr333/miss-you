@@ -18,12 +18,10 @@ export default async (req) => {
     if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 });
 
     const { pair, fromName, to, kind, lat, lng } = await req.json();
-    let url = '/';
     let point = null;
     if (kind === 'sos') {
         if (typeof lat === 'number' && typeof lng === 'number' && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
             point = `${lat.toFixed(5)},${lng.toFixed(5)}`;
-            url = `https://www.google.com/maps/search/?api=1&query=${point}`;
         }
     }
     const m = MESSAGES[kind];
@@ -38,7 +36,6 @@ export default async (req) => {
         title: m.title.replace('{me}', fromName.slice(0, 20)),
         body: m.body,
         kind,
-        url,
         point,
     });
 
