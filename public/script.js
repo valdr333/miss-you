@@ -281,14 +281,5 @@ if (sosParam) {
 // App was already open: sw.js sends a message instead
 navigator.serviceWorker?.addEventListener('message', (e) => {
     if (e.data?.type !== 'sos') return;
-    whenVisible(() => setTimeout(() => showSosDialog(e.data.point), 300));
+    location.replace(`${location.pathname}?sos=${encodeURIComponent(e.data.point)}`);
 });
-
-function whenVisible(fn) {
-    if (document.visibilityState === 'visible') return fn();
-    document.addEventListener('visibilitychange', function onChange() {
-        if (document.visibilityState !== 'visible') return;
-        document.removeEventListener('visibilitychange', onChange);
-        fn();
-    });
-}
