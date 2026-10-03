@@ -6,7 +6,7 @@ self.addEventListener('push', (event) => {
     const options = {
         body: data.body || '',
         icon: '/icon-192.png',
-        data: { url: data.url || '/' },
+        data: { url: data.url || '/', point: data.point },
     };
     if (data.kind === 'sos') {
         options.requireInteraction = true;          // stays until dismissed
@@ -21,7 +21,20 @@ self.addEventListener('notificationclick', (event) => {
     event.notification.close();
     const url = event.notification.data.url;
     if (url !== '/') {
-        event.waitUntil(self.clients.openWindow(url));
+        // Try the Google Maps app first; if the phone refuses, open the web map
+        const point = event.notification.data.point;
+        const ua = navigator.userAgent;
+        let appUrl = null;
+        if (/android/i.test(ua)) {
+            appUrl = `intent://www.google.com/maps/search/?api=1&query=${point}#Intent;scheme=https;package=com.google.android.apps.maps;end`;
+        } else if (/iPhone|iPad|iPod/.test(ua)) {
+            appUrl = `comgooglemaps://?q=${point}&zoom=14`;
+        }
+        if (point && appUrl) {
+            event.waitUntil(self.clients.openWindow(appUrl).catch(() => self.clients.openWindow(url)));
+        } else {
+            event.waitUntil(self.clients.openWindow(url));
+        }
         return;
     }
     event.waitUntil((async () => {

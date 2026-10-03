@@ -19,9 +19,11 @@ export default async (req) => {
 
     const { pair, fromName, to, kind, lat, lng } = await req.json();
     let url = '/';
+    let point = null;
     if (kind === 'sos') {
         if (typeof lat === 'number' && typeof lng === 'number' && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
-            url = `https://www.google.com/maps/search/?api=1&query=${lat.toFixed(5)},${lng.toFixed(5)}`;
+            point = `${lat.toFixed(5)},${lng.toFixed(5)}`;
+            url = `https://www.google.com/maps/search/?api=1&query=${point}`;
         }
     }
     const m = MESSAGES[kind];
@@ -37,6 +39,7 @@ export default async (req) => {
         body: m.body,
         kind,
         url,
+        point,
     });
 
     try {
